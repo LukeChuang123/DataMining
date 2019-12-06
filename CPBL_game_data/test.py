@@ -29,9 +29,13 @@ conn = MySQLdb.Connect(host = '127.0.0.1',
 cur = conn.cursor()
 
 #將root的html文件從網站抓取並存於soup變數，然後將soup傳給Html_content_scratcher
-# quote_page = "http://www.cpbl.com.tw/web/team_playergrade.php?&gameno=01&team=E02&year=2019&grade=3&syear=2019"
-# page = urllib.request.urlopen(quote_page)
-# soup = BeautifulSoup(page, "html.parser")
+quote_page = "http://zxc22.idv.tw/allgame.asp?clickflag=999"
+page = urllib.request.urlopen(quote_page)
+soup = BeautifulSoup(page, "html.parser")
+
+year_options = soup.find("select",onchange="javascript:document.size.submit();").find_all("option")
+pages_per_year = [page.text for page in year_options]
+print(pages_per_year) 
 # all_teams = (soup.find("ul",attrs = {"id":"menu-submenu2"}).contents)[3:13:2]
 # team_link_list = []
 # team_list = []
@@ -63,10 +67,11 @@ cur = conn.cursor()
 #         print(1)
 # else:
 #         print(0)
-l = None
-print(type(l))
-for i in l:
-        print(i)
+# year_link_list = []
+# for year in range(24,30):
+#         year_link_list.append("http://zxc22.idv.tw/cpbl"+str(year)+"/allgame.asp")
+# year_link_list.append("http://zxc22.idv.tw/allgame.asp?clickflag=999")
+# print(year_link_list)
 # for i in l[-3:]:
 #         print(i)
 # driver.quit()

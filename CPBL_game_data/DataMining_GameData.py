@@ -31,22 +31,77 @@ conn = MySQLdb.Connect(host = '127.0.0.1',
                        charset='utf8')
 cur = conn.cursor()
 
-#將root的html文件從網站抓取並存於soup變數，然後將soup傳給Html_content_scratcher
-quote_page = "http://zxc22.idv.tw/"
-page = urllib.request.urlopen(quote_page)
-soup = BeautifulSoup(page, "html.parser")
-Html_content_scratcher.__init__(Html_content_scratcher,quote_page[:-9],soup)
+#取得中職24~30年的網站連結
+year_link_list = Html_content_scratcher.get_year_links()
+# print(year_link_list)
 
 #啟動瀏覽器驅動程式
 driver = webdriver.Chrome('./chromedriver')
 driver.implicitly_wait(3)
 
-#暫停python
+# 暫停python
 time.sleep(rd.randint(50,100)/10)
 
-#抓取各球隊網站連結列表
-team_link_list = Html_content_scratcher.get_team_links(Html_content_scratcher)
-print(team_link_list)
+#建立表格
+is_table_exists = MySQL_table_connector.table_exists(MySQL_table_connector,conn,cur,"each_game_data")
+if(is_table_exists == 0): 
+    MySQL_table_connector.create_table(cur,conn,"each_game_data")
+
+# 抓取各球隊網站連結列表
+for year_link in year_link_list:
+    driver.get(year_link)
+    # soup = Html_content_scratcher.get_html(Html_content_scratcher,year_link)
+    # whole_day_data = soup.find_all("tr")[4:24]
+    pages_per_year = Html_content_scratcher.get_pages_nums(Html_content_scratcher,year_link)
+    for page in pages_per_year:
+        Html_content_scratcher.try_click(driver,"option",page)
+        # print("page_source:"+driver.page_source)
+        soup = Html_content_scratcher.get_html_bydriver(Html_content_scratcher,driver.page_source)
+        print(driver.page_source)
+        whole_day_data = soup.find_all("tr")[3:24]
+        for day_data_index in range(0,len(whole_day_data),2):
+            # print(whole_day_data[day_data_index])
+            day_data = ["\'"+whole_day_data[day_data_index].find_all("td")[0].text+"\'"]
+            print("day_data",day_data)
+            date_and_day = whole_day_data[day_data_index].find_all("td")[1].text.split("(")
+            print("data_and_day",date_and_day)
+            date = date_and_day[0]
+            day = date_and_day[1][0]
+            day_dict = {"一":'Mon',"二":'Tue',"三":'Wed',"四":'Thu',"五":'Fri',"六":'Sat',"日":'Sun'}
+            for data in [date,day_dict[day]]:
+                day_data.append("\'"+data+"\'")
+            for data_html in whole_day_data[day_data_index].find_all("td")[2:5]:
+                day_data.append("\'"+data_html.text+"\'")
+            for hr_or_err in whole_day_data[day_data_index+1].find_all("td"):
+                day_data.append("\'"+hr_or_err.text+"\'")
+            scores = whole_day_data[day_data_index].find_all("td")[5].text.split(":")
+            time = whole_day_data[day_data_index].find_all("td")[6].text
+            box_office = whole_day_data[day_data_index].find_all("td")[7].text
+            for data in [scores[0],scores[1],time,box_office]:
+                day_data.append("\'"+data+"\'")
+            # print(day_data)
+            Database_uploader.upload_to_db_byrow(day_data,"each_game_data",cur,conn)
+
+driver.quit()
+
+if(len(Html_content_scratcher.error) > 0):
+    for error in Html_content_scratcher.error:
+        print(error)
+else:
+    print("every thing fine")
+
+
+
+
+
+
+
+# soup = Html_content_scratcher.get_html(Html_content_scratcher,year_link_list[6])
+# one_day_data = soup.find_all("tr")[23]
+# print(one_day_data)
+
+
+
 
 #error集
 error = []
@@ -77,107 +132,4 @@ error = []
 
 
 
-# #連線指定表格;如果還沒該表，則建立新表
-# MySQL_table_connector.__init__(MySQL_table_connector,conn,cur,db_name,table_name)
-# is_table_exists = MySQL_table_connector.table_exists(MySQL_table_connector)
-# print(is_table_exists)
-# if(is_table_exists == 0):
-#     MySQL_table_connector.create_table(MySQL_table_connector)
-#     print(table_name + " "+"created")
-# else:
-#     print("table is exist")
-
-
-
-
-# #抓年份、選手名字和打擊數據(html)
-# demand_data_title = soup.html.find("title")
-# year = "\'"+re.findall("[1-2]{1}[0-9]{3}", demand_data_title.text.strip())[0]+"\',"
-# demand_data_table = soup.html.find_all("table", attrs={"id": "table_id3"})[1]
-# whole_data = demand_data_table.find_all("td", attrs={"valign": "middle"})
-
-# #抓每個人有多少種數據(多少欄)，存成data_col_num，並同時將欄位名稱提取出來
-# Data_cleaner.__init__(Data_cleaner,whole_data)
-# data_col_num,col_name_list =  Data_cleaner.extract_col_name(Data_cleaner)
-# whole_player_data = Data_cleaner.clean_data(Data_cleaner)
-
-# # #將資料存進db
-# db_uploader.__init__(db_uploader,year,data_col_num,table_name,whole_player_data)
-# db_uploader.upload_to_db(db_uploader,cur,conn)
-
-
-
-
-# #抓每個人有多少種數據(多少欄)，存成data_col_num，並同時將欄位名稱提取出來
-# Data_cleaner.__init__(Data_cleaner,whole_data)
-# data_col_num,col_name_list =  Data_cleaner.extract_col_name(Data_cleaner)
-# whole_player_data = Data_cleaner.clean_data(Data_cleaner)
-# data_col_num = 0
-# col_name_list = []
-# for data in whole_data:
-#     if(String_language_judgement.check_contain_chinese(data.text.strip()) == False):
-#        data_col_num += 1
-#        col_name_list.append(data.text.strip())
-#     else:
-#         break
-# # print("hello",data_col_num)
-
-# #去除網頁上的表格欄位名稱後，剩下的資料(選手資料)存進whole_player_data
-# whole_player_data = [data for data in whole_data[data_col_num:]]
-
-# # 列印inserted_player_data、將資料從html變成str然後存成新的whole_player_data
-# col_number = 1
-# for data_index in range(len(whole_player_data)):
-#     if(col_number <= 21):
-#         player_data = whole_player_data[data_index].text.strip()
-#         #因為平均那列的欄數只有21欄，不放入whole_player_data，所以跳出迴圈
-#         if(player_data == "League AVG 聯盟平均"):
-#             for average_data in whole_player_data[data_index:]:
-#                 whole_player_data.remove(average_data)
-#             break
-#         else:
-#             whole_player_data[data_index] = "\'"+player_data+"\'"
-#             print(player_data,end = " ")
-#             col_number += 1
-#     else:
-#         player_data = whole_player_data[data_index].text.strip()
-#         whole_player_data[data_index] = "\'"+player_data+"\'"
-#         # print(player_data,"\n")
-#         col_number = 1
-
-# #將資料存進db
-# db_uploader.__init__(db_uploader,year,data_col_num,table_name,whole_player_data)
-# db_uploader.upload_to_db(db_uploader,cur,conn)
-# for player_data_index in range(0,len(whole_player_data),data_col_num):
-#     player_data = whole_player_data[player_data_index:player_data_index+data_col_num]
-#     id = "\'"+str(int(player_data_index/data_col_num+1))+"\',"
-#     inserted_player_data = ",".join(player_data)
-#     print(inserted_player_data)
-#     sql = "INSERT INTO"+" "+table_name+"(id,YEAR,NAME,G,PA,AVG,OBP,SLG,OPS,OPS_plus,BABIP,SecA,BIP_per,RC,wRC,wRC_plus,wOBA,wRAA,EqA,EqR,BB_per,K_per,ABHR,GOFO)VALUES ("+id+year+inserted_player_data+");"
-#     # print(sql)
-#     try:
-#         # 执行sql语句
-#         cur.execute(sql)
-#         # 提交到数据库执行
-#         conn.commit()
-#         print("commit ok!")
-#     except:
-#         # Rollback in case there is any error
-#         conn.rollback()
-#         print("rollback...")
-        
-
-#將資料存進db
-# sql = "INSERT INTO"+" "+table_name+"(NAME,PA,\
-#     AVG,OBP,SLG,OPS,OPS_plus,BABIP,BIP_per,RC,wRC,\
-#     wRC_plus,wOBA,wRAA,EqA,EqR,BB_per,K_per,ABHR,GOFO\
-#     VALUES ("+inserted_player_data+")"
-# try:
-#    # 执行sql语句
-#    cur.execute(sql)
-#    # 提交到数据库执行
-#    db.commit()
-# except:
-#    # Rollback in case there is any error
-#    db.rollback()
-
+ 
