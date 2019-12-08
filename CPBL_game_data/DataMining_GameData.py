@@ -50,12 +50,9 @@ if(is_table_exists == 0):
 # 抓取各球隊網站連結列表
 for year_link in year_link_list:
     driver.get(year_link)
-    # soup = Html_content_scratcher.get_html(Html_content_scratcher,year_link)
-    # whole_day_data = soup.find_all("tr")[4:24]
     pages_per_year = Html_content_scratcher.get_pages_nums(Html_content_scratcher,year_link)
     for page in pages_per_year:
         Html_content_scratcher.try_click(driver,"option",page)
-        # print("page_source:"+driver.page_source)
         soup = Html_content_scratcher.get_html_bydriver(Html_content_scratcher,driver.page_source)
         print(driver.page_source)
         whole_day_data = soup.find_all("tr")[3:24]
@@ -79,7 +76,6 @@ for year_link in year_link_list:
             box_office = whole_day_data[day_data_index].find_all("td")[7].text
             for data in [scores[0],scores[1],time,box_office]:
                 day_data.append("\'"+data+"\'")
-            # print(day_data)
             Database_uploader.upload_to_db_byrow(day_data,"each_game_data",cur,conn)
 
 driver.quit()
