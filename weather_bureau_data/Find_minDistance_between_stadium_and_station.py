@@ -63,27 +63,31 @@ def find_min_distance(all_observe_station_data_list,min_distance_between_stadium
     if(min_distance_between_stadium_and_station[4] == None):
         print("hello")
         if(start_date <= project_start_date):
-            each_min_distances.append(min_distance_between_stadium_and_station)
+            each_min_distances.append(min_distance_between_stadium_and_station[0:5])
         else:
             print("hello")
-            input("continue1?")
-            each_min_distances.append(min_distance_between_stadium_and_station)
-            find_min_distance(all_observe_station_data_list.remove(removed_station_if_need),min_distance_between_stadium_and_station,stadiums,address_index,each_min_distances)
+            # input("continue1?")
+            each_min_distances.append(min_distance_between_stadium_and_station[0:5])
+            all_observe_station_data_list.remove(removed_station_if_need)
+            find_min_distance(all_observe_station_data_list,["",39400,"","",""],stadiums,address_index,each_min_distances)
     else:
         end_date = datetime.datetime.strptime(min_distance_between_stadium_and_station[4], "%Y-%m-%d").date()
         if(start_date <= project_start_date and project_end_date <= end_date):
-            each_min_distances.append(min_distance_between_stadium_and_station)
+            each_min_distances.append(min_distance_between_stadium_and_station[0:5])
         elif(start_date <= project_start_date and project_start_date <= end_date and end_date < project_end_date):
-            input("continue2?")
-            each_min_distances.append(min_distance_between_stadium_and_station)
-            find_min_distance(all_observe_station_data_list.remove(removed_station_if_need),min_distance_between_stadium_and_station,stadiums,address_index,each_min_distances)
+            # input("continue2?")
+            each_min_distances.append(min_distance_between_stadium_and_station[0:5])
+            all_observe_station_data_list.remove(removed_station_if_need)
+            find_min_distance(all_observe_station_data_list,["",39400,"","",""],stadiums,address_index,each_min_distances)
         elif(project_start_date < start_date and project_end_date <= end_date):
-            input("continue3?")
-            each_min_distances.append(min_distance_between_stadium_and_station)
-            find_min_distance(all_observe_station_data_list.remove(removed_station_if_need),min_distance_between_stadium_and_station,stadiums,address_index,each_min_distances)
+            # input("continue3?")
+            each_min_distances.append(min_distance_between_stadium_and_station[0:5])
+            all_observe_station_data_list.remove(removed_station_if_need)
+            find_min_distance(all_observe_station_data_list,["",39400,"","",""],stadiums,address_index,each_min_distances)
         else:
-            input("continue4?")
-            find_min_distance(all_observe_station_data_list.remove(removed_station_if_need),min_distance_between_stadium_and_station,stadiums,address_index,each_min_distances)
+            # input("continue4?")
+            all_observe_station_data_list.remove(removed_station_if_need)
+            find_min_distance(all_observe_station_data_list,["",39400,"","",""],stadiums,address_index,each_min_distances)
 
     
 
@@ -178,6 +182,8 @@ for address in address_list:
 
 distance_between_stadium_and_station_table = pd.DataFrame(each_min_distances,columns = ["球場","最短距離","觀測站","資料起始日期","撤站日期"])
 print(distance_between_stadium_and_station_table)
+
+straw_hat_df.to_csv("各球場對應觀測站.csv", index = False)
 
 
 
