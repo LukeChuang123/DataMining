@@ -127,8 +127,20 @@
 # print(distance_between_stadium_and_station_table)
 
 # Dat
-list = [1,2,3,4,5,6]
-print(list)
-list.remove(6)
-print(list)
-
+# list = [1,2,3,4,5,6]
+# print(list)
+# list.remove(6)
+# print(list)
+# print([i for i in list if i ==2 or i==3])
+# def a():
+#     b=5
+#     if(2>1):
+#         b=3
+#     return b
+# c=a()
+# print(c)
+b=True
+for i in range(3):
+    if(2>1):
+        b=False
+print(b)
