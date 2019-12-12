@@ -34,15 +34,14 @@ def upload_to_db(self,cur_assigned,conn_assigned):
             sql = "INSERT INTO"+" "+table_name+"(id,YEAR,NAME,G,PA,AVG,OBP,SLG,OPS,OPS_plus,BABIP,SecA,BIP_per,RC,wRC,wRC_plus,wOBA,wRAA,EqA,EqR,BB_per,K_per,ABHR,GOFO)VALUES ("+id_str+year+inserted_player_data+");"
         else:
              sql = "INSERT INTO"+" "+table_name+"(id,YEAR,NAME,G,GS,GR,IP,ERA,WHIP,FIP,ERA_plus,BB_per,K_per,BABIP,LOB_per,DER,DIP,DIPS_ERA,DIPS_WHIP,WAR)VALUES ("+id_str+year+inserted_player_data+");"
-        # print(sql)
-        # try:
+        try:
             # 执行sql语句
-        cur.execute(sql)
+            cur.execute(sql)
             # 提交到数据库执行
-        conn.commit()
-        print("commit ok!")
-        # except:
-        #     # Rollback in case there is any error
-        #     conn.rollback()
-        #     print("rollback...")
+            conn.commit()
+            print("commit ok!")
+        except:
+            # Rollback in case there is any error
+            conn.rollback()
+            print("rollback...")
     
