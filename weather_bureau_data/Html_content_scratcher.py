@@ -15,13 +15,6 @@ error = []
 
 def __init__(self,html_assigned):
     self.html = html_assigned
-def get_year_links():  
-    year_link_list = []
-    for year in range(24,30):
-        year_link_list.append("http://zxc22.idv.tw/cpbl"+str(year)+"/allgame.asp")
-    year_link_list.append("http://zxc22.idv.tw/allgame.asp?clickflag=999")
-    # print(year_link_list)
-    return year_link_list
 def get_html_bydriver(self,page_source_assigned):
     self.page_source = page_source_assigned
     soup = BeautifulSoup(self.page_source, "html.parser")
@@ -41,9 +34,9 @@ def try_click(driver,tag,text,count=0):
         else:
             error.append("cannot locate element"+" "+tag+" "+text)
             print("cannot locate element",tag,text)
-def try_click_img(driver,img,count=0):
+def try_input(driver,img,text,count=0):
     try:
-        driver.find_element_by_xpath('//a[img/@src="'+img+'"]').click()
+        driver.find_element_by_xpath('//td[img/@src="'+img+'"]').send_keys(text)
     except:
         time.sleep(2)
         count+=1
@@ -58,6 +51,39 @@ def get_pages_nums(self,link):
     pages_per_year = [page.text for page in year_options]
     
     return pages_per_year
+def get_table(soup):
+    try:
+        table_rows = soup.find_all("tbody")[1].find_all("tr")
+    except:
+        table_rows = soup.find_all("tbody")[0].find_all("tr")
+    else:
+        pass
+
+    # print(table_rows)
+
+    col_name_list = []
+    for col_name in table_rows[1].find_all("th"):
+        col_name_list.append(col_name.text)
+    col_name_list[10] = col_name_list[10][:-1]
+    col_name_list[14] = col_name_list[14][:-1]
+    print(col_name_list)
+
+    row_list = []
+    for row in table_rows[3:]:
+        row_cell_list = []
+        for cell in row.find_all("td"):
+            if(cell.text == '...\xa0'):
+                row_cell_list.append(None)
+            else:
+                row_cell_list.append(cell.text)
+        print(row_cell_list)
+        row_list.append(row_cell_list)
+
+    table = pd.DataFrame(row_list,columns = col_name_list)
+    print(table)
+
+    return table
+
 
 
 

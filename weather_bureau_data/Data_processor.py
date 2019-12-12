@@ -29,24 +29,24 @@ def extract_col_name(self):
     #     print()
 
     return data_col_num,col_name_list
-def process_dataframe(player_byGame_table,player_byGame_table_right,year,name,team_name):
+def process_dataframe(table,data):
     #先處理player_byGame_table
-    date_game_list = list(player_byGame_table["DATE(GAME)"])
-    date_and_game = pd.DataFrame([[year+"/"+date_game[0:5], date_game[6:len(date_game)-1]] for date_game in date_game_list],columns = ["DATE","GAME NO."])
-    player_byGame_table.drop("DATE(GAME)",axis=1,inplace=True) 
-    player_byGame_table.insert(0,column="DATE",value=date_and_game["DATE"]) 
-    player_byGame_table.insert(1,column="GAME_NO",value=date_and_game["GAME NO."]) 
-    player_byGame_table.insert(2,column="NAME",value=name) 
-    player_byGame_table.insert(3,column="TEAM",value=team_name)
+    # date_game_list = list(player_byGame_table["DATE(GAME)"])
+    # date_and_game = pd.DataFrame([[year+"/"+date_game[0:5], date_game[6:len(date_game)-1]] for date_game in date_game_list],columns = ["DATE","GAME NO."])
+    # player_byGame_table.drop("DATE(GAME)",axis=1,inplace=True) 
+    table.insert(0,column="DATE",value=data[0]) 
+    table.insert(1,column="STADIUM",value=data[1]) 
+    table.insert(2,column="STATION",value=data[2]) 
+    # player_byGame_table.insert(3,column="TEAM",value=team_name)
 
-    #後處理player_byGame_table_right
-    player_byGame_table_right.drop("DATE(GAME)",axis=1,inplace=True)
-    player_byGame_table_right.drop("OPP",axis=1,inplace=True)
+    # #後處理player_byGame_table_right
+    # player_byGame_table_right.drop("DATE(GAME)",axis=1,inplace=True)
+    # player_byGame_table_right.drop("OPP",axis=1,inplace=True)
 
-    #將兩個dataframe合併
-    final_df = player_byGame_table.join(player_byGame_table_right,lsuffix='_1',rsuffix='_2')
+    # #將兩個dataframe合併
+    # final_df = player_byGame_table.join(player_byGame_table_right,lsuffix='_1',rsuffix='_2')
 
-    return final_df
+    return table
 def process_defense_dataframe(whole_player_table,year,name_list):
     whole_player_table.drop("NAME",axis=1,inplace=True) 
     whole_player_table.insert(0,column="NAME",value=pd.Series(name_list)) 
