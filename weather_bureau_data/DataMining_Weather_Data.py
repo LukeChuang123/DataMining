@@ -1,6 +1,4 @@
-import MySQLdb
-import re
-
+# -*- coding: utf-8 -*
 import pandas as pd
 
 import urllib
@@ -8,117 +6,84 @@ from bs4 import BeautifulSoup
 
 import random as rd
 import time
+import datetime
 
+import Database_uploader  
 import Html_content_scratcher
-import All_html_visitor
-import String_language_judgement
 import Data_processor
-import Database_uploader
-import MySQL_table_connector 
 
 from selenium import webdriver
 
-#輸入要連線的資料庫和表格
-db_name = input("Which database:").strip()
-# # table_name = input("Which table:").strip()
+stadium_and_station_tabel = pd.read_excel("各球場對應觀測站.xls")
 
-#連線至MySQL5指定資料庫
-conn = MySQLdb.Connect(host = '127.0.0.1',
-                       port = 3306,
-                       user = 'root',
-                       passwd = 'Lc-20332895-',
-                       db = db_name,
-                       charset='utf8')
-cur = conn.cursor()
+#本研究所關注之期間(2013-03-23~2019-10-17)
+start_date = datetime.datetime.strptime("2013-03-23", "%Y-%m-%d").date()
+end_date = datetime.datetime.strptime("2019-10-17", "%Y-%m-%d").date()
 
-#取得中職24~30年的網站連結
-year_link_list = Html_content_scratcher.get_year_links()
-# print(year_link_list)
+stadium_city_dict = {"天母":"臺北市","新莊":"新北市","桃園":"桃園市","新竹":"新竹市","台灣國立體育":"臺中市","洲際":"臺中市","雲林":"雲林縣","嘉義市":"嘉義市","台南":"臺南市","澄清湖":"高雄市","屏東":"屏東縣","羅東":"宜蘭縣","花蓮":"花蓮縣"}
+station_english_dict = {"斗六":"(Douliou)","鳳山":"(Fongshan)","屏東":"(Pingtung)","羅東":"(Luodong)"}
 
-#啟動瀏覽器驅動程式
-driver = webdriver.Chrome('./chromedriver')
-driver.implicitly_wait(3)
+station_list = list(stadium_and_station_tabel["觀測站"])
 
-# 暫停python
-time.sleep(rd.randint(50,100)/10)
+#將觀測站設為索引
+stadium_and_station_tabel.set_index("觀測站", inplace = True)
 
-#建立表格
-is_table_exists = MySQL_table_connector.table_exists(MySQL_table_connector,conn,cur,"each_game_data")
-if(is_table_exists == 0): 
-    MySQL_table_connector.create_table(cur,conn,"each_game_data")
+#登入各觀測站資料
+for station in station_list[19:]:
+    #啟動瀏覽器驅動程式
+    driver = webdriver.Chrome('./chromedriver')
+    driver.implicitly_wait(3)
 
-# 抓取各球隊網站連結列表
-for year_link in year_link_list:
-    driver.get(year_link)
-    pages_per_year = Html_content_scratcher.get_pages_nums(Html_content_scratcher,year_link)
-    for page in pages_per_year:
-        Html_content_scratcher.try_click(driver,"option",page)
-        soup = Html_content_scratcher.get_html_bydriver(Html_content_scratcher,driver.page_source)
-        print(driver.page_source)
-        whole_day_data = soup.find_all("tr")[3:24]
-        for day_data_index in range(0,len(whole_day_data),2):
-            # print(whole_day_data[day_data_index])
-            day_data = ["\'"+whole_day_data[day_data_index].find_all("td")[0].text+"\'"]
-            print("day_data",day_data)
-            date_and_day = whole_day_data[day_data_index].find_all("td")[1].text.split("(")
-            print("data_and_day",date_and_day)
-            date = date_and_day[0]
-            day = date_and_day[1][0]
-            day_dict = {"一":'Mon',"二":'Tue',"三":'Wed',"四":'Thu',"五":'Fri',"六":'Sat',"日":'Sun'}
-            for data in [date,day_dict[day]]:
-                day_data.append("\'"+data+"\'")
-            for data_html in whole_day_data[day_data_index].find_all("td")[2:5]:
-                day_data.append("\'"+data_html.text+"\'")
-            for hr_or_err in whole_day_data[day_data_index+1].find_all("td"):
-                day_data.append("\'"+hr_or_err.text+"\'")
-            scores = whole_day_data[day_data_index].find_all("td")[5].text.split(":")
-            time = whole_day_data[day_data_index].find_all("td")[6].text
-            box_office = whole_day_data[day_data_index].find_all("td")[7].text
-            for data in [scores[0],scores[1],time,box_office]:
-                day_data.append("\'"+data+"\'")
-            Database_uploader.upload_to_db_byrow(day_data,"each_game_data",cur,conn)
+    driver.get("https://e-service.cwb.gov.tw/HistoryDataQuery/index.jsp")
+    time.sleep(3)
 
-driver.quit()
+    #選擇縣市和觀測站
+    driver.find_element_by_xpath("//option[contains(text(),'"+stadium_city_dict[stadium_and_station_tabel.loc[station,"球場"]]+"')]").click()
+    if(station[-5:] == "(撤銷站)"):
+        driver.find_element_by_xpath("//option[contains(text(),'"+station[0:2]+" "+station_english_dict[station[0:2]]+" "+station[2:]+"')]").click()
+    else:
+        driver.find_element_by_xpath("//option[contains(text(),'"+station+"')]").click()
 
-if(len(Html_content_scratcher.error) > 0):
-    for error in Html_content_scratcher.error:
-        print(error)
-else:
-    print("every thing fine")
+    #選擇從哪天的資料開始抓
+    station_start_date = datetime.datetime.strptime(stadium_and_station_tabel.loc[station,"資料起始日期"], "%Y-%m-%d").date()
+    if(station_start_date < start_date):
+        driver.find_elements_by_tag_name('input')[0].send_keys("2013-03-23")
+    else:
+        driver.find_elements_by_tag_name('input')[0].send_keys(str(station_start_date))
+    
+    driver.find_element_by_id("doquery").click()
+    driver.switch_to.window(driver.window_handles[1])
 
+    page = driver.page_source
+    soup = BeautifulSoup(page, "html.parser")
 
+    #把每天的表格抓下來並上傳
+    root_page = driver.current_url[:-10]
+    scratch_date = datetime.datetime.strptime(driver.current_url[-10:], "%Y-%m-%d").date()
+
+    #如果被拒絕連線就再試一次
+    while(scratch_date <= end_date):
+        quote_page = root_page+str(scratch_date)
+        try:
+            page = urllib.request.urlopen(quote_page)
+        except:
+            time.sleep(rd.randint(20,100))
+            try:
+                page = urllib.request.urlopen(quote_page)    
+            except:
+                    print("connection fail")
+        soup = BeautifulSoup(page, "html.parser")
+        table = Html_content_scratcher.get_table(soup)
+        #處理資料
+        table = Data_processor.process_dataframe(table,[str(scratch_date),stadium_and_station_tabel.loc[station,"球場"],station])
+        #將表格上傳資料庫
+        Database_uploader.upload_to_db(table,"testing")
+        scratch_date += +datetime.timedelta(days=1)
+    input("continue?")
+    driver.quit()
 
 
-
-
-
-# soup = Html_content_scratcher.get_html(Html_content_scratcher,year_link_list[6])
-# one_day_data = soup.find_all("tr")[23]
-# print(one_day_data)
-
-
-
-
-#error集
-error = []
-
-#遍歷各子網頁(抓歷年資料的連結、造訪、資料清洗、上傳db)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 
@@ -129,3 +94,8 @@ error = []
 
 
  
+
+
+
+
+

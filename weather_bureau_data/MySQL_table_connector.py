@@ -1,9 +1,8 @@
 import MySQLdb
 import re
 
-is_batting_table_exist = True
-is_pitching_table_exist = True
-is_defense_table_exist = True
+is_table_exist = True
+
 
 #初始化要確認是否存在，若不存在則創立的表格
 # def __init__(self):
@@ -27,6 +26,7 @@ def table_exists(self,conn,cur,table_name):
         print("inside not exist")
         return 0
 def turn_on_table(self,table_name):
+    self.is_table_exist = True
     if(table_name == "打擊成績"):
         self.is_batting_table_exist = True
     elif(table_name == "投球成績"):

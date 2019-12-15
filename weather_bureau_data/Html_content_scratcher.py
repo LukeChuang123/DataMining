@@ -55,6 +55,7 @@ def get_table(soup):
     try:
         table_rows = soup.find_all("tbody")[1].find_all("tr")
     except:
+        time.sleep(3)
         table_rows = soup.find_all("tbody")[0].find_all("tr")
     else:
         pass

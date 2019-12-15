@@ -36,7 +36,8 @@ def process_dataframe(table,data):
     # player_byGame_table.drop("DATE(GAME)",axis=1,inplace=True) 
     table.insert(0,column="DATE",value=data[0]) 
     table.insert(1,column="STADIUM",value=data[1]) 
-    table.insert(2,column="STATION",value=data[2]) 
+    table.insert(2,column="STATION",value=data[2])
+    table.rename(columns={'觀測時間(hour)':'觀測時間'}, inplace = True) 
     # player_byGame_table.insert(3,column="TEAM",value=team_name)
 
     # #後處理player_byGame_table_right

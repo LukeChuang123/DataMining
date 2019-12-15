@@ -29,7 +29,20 @@ def upload_to_db(table,dbtable_name):
     for col in table.columns:
         dtypedict[col] = NVARCHAR(length=255)
     
-    table.to_sql(dbtable_name, engine, if_exists='append', index=False, dtype=dtypedict)
+    if(table_connector.is_table_exist == False):
+        table_connector.turn_on_table(table_connector,dbtable_name)
+        table.to_sql(dbtable_name, engine, if_exists='append', index=False, dtype=dtypedict)
+        conn.execute("alter table "+dbtable_name+" "+"add constraint date_stadium_station_hour unique(DATE,STADIUM,STATION,觀測時間);")
+
+    # table.to_sql(dbtable_name, engine, if_exists='append', index=False, dtype=dtypedict)
+    table.to_sql("temp_table", engine, if_exists='replace', index=False, dtype=dtypedict)
+
+    # table.to_sql(dbtable_name, engine, if_exists='append', index=False, dtype=dtypedict)
+
+    #若資料已存在則略過，否則插入
+    with engine.begin() as cnx:
+        insert_sql = "INSERT IGNORE INTO "+dbtable_name+" "+"(SELECT * FROM temp_table)"
+        cnx.execute(insert_sql)
 
 def upload_to_db_byrow(data,dbtable_name,cur,conn):
     inserted_day_data = ",".join(data)
