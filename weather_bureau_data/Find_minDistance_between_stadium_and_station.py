@@ -10,26 +10,28 @@ import datetime
 import geocoder
 from math import radians, cos, sin, asin, sqrt  
 
+#檢查找到的觀測站的使用時間是否一個接一個完整涵蓋對應球場在2013/03/23~2019/10/17的使用
+def check_station_using_date(start_date,end_date,found_stations_for_stadium):
+    for found_station in found_stations_for_stadium:
+        if(datetime.datetime.strptime(found_station[3], "%Y-%m-%d").date() <= start_date):
+            if(found_station[4] == None):
+                is_found_station_enough = True
+                break
+            elif(end_date <= datetime.datetime.strptime(found_station[4], "%Y-%m-%d").date()):
+                is_found_station_enough = True
+                break
+            else:
+                start_date = datetime.datetime.strptime(found_station[4], "%Y-%m-%d").date()
+                found_stations_for_stadium.remove(found_station)
+                check_station_using_date(start_date,end_date,found_stations_for_stadium)
+    # return is_found_station_enough
 #判斷當前找到的觀測站其使用時間之加總是否包含整個研究期間
 def if_found_station_enough(stadium,each_min_distances):
     is_found_station_enough = False
     start_date = datetime.datetime.strptime("2013-03-23", "%Y-%m-%d").date()
     end_date = datetime.datetime.strptime("2019-10-17", "%Y-%m-%d").date()
     found_stations_for_stadium = [min_distance for min_distance in each_min_distances if min_distance[0] == stadium]
-    for found_station in found_stations_for_stadium:
-        if(datetime.datetime.strptime(found_station[3], "%Y-%m-%d").date() <= start_date):
-            for found_station in found_stations_for_stadium:
-                if(found_station[4] == None):
-                    is_found_station_enough = True
-                    break
-                else:
-                    if(end_date <= datetime.datetime.strptime(found_station[4], "%Y-%m-%d").date()):
-                        is_found_station_enough = True
-                        break
-                    else:
-                        continue
-        else:
-            continue
+    check_station_using_date(start_date,end_date,found_stations_for_stadium)
     return is_found_station_enough
 
 def get_list_at(index,all_observe_station_data_list):
@@ -198,8 +200,8 @@ stadium_location  = pd.DataFrame(stadium_lnglat_list, index = stadiums, columns 
 print(stadium_location)
 
 #輸出資料
-stadium_location.to_excel('各球場位置.xls')
-distance_between_stadium_and_station_table.to_excel('各球場對應觀測站.xls')
+stadium_location.to_excel('各球場位置.xlsx')
+distance_between_stadium_and_station_table.to_excel('各球場對應觀測站.xlsx')
 
 
 
